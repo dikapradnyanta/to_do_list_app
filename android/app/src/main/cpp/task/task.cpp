@@ -70,29 +70,74 @@ void Task::addTask(const std::string& title, const std::string& description, int
     sqlite3_close(db);
 }
 
-void Task::getTask(int id)
+int Task::getTask(int id)
 {
-    // kosong
+    // Mengembalikan task berdasarkan ID
+    for (const auto& task : tasks) {
+        if (std::stoi(task.id) == id && !task.isDeleted) {
+            std::cout << "ID: " << task.id << ", Title: " << task.title
+                      << ", Description: " << task.description
+                      << ", Date: " << task.date
+                      << ", Complete: " << (task.isComplete ? "Yes" : "No")
+                      << ", Deleted: " << (task.isDeleted ? "Yes" : "No") << std::endl;
+            return 0; // Berhasil menemukan task
+        }
+    }
+    std::cout << "Task dengan ID " << id << " tidak ditemukan." << std::endl;
+    return -1; // Task tidak ditemukan
 }
 
-void Task::getTaskByDate(int date)
+int Task::getTaskByDate(int date)
 {
-    // kosong
+    // Mengembalikan jumlah task yang ada pada tanggal tertentu
+    int count = 0;
+    for (const auto& task : tasks) {
+        if (task.date == date && !task.isDeleted) {
+            count++;
+        }
+    }
+    return count;   
 }
 
-void Task::getDoneTaskCount(int date)
+int Task::getDoneTaskCount(int date)
 {
-    // kosong
+    // Mengembalikan jumlah task yang sudah selesai pada tanggal tertentu
+    int count = 0;
+    for (const auto& task : tasks) {
+        if (task.isComplete && task.date == date && !task.isDeleted) {
+            count++;
+        }
+    }
+    return count;
 }
 
-void Task::getAllTasks()
+int Task::getAllTasks()
 {
-    // kosong
+    //mengembalikan semua task yang ada di memory
+    int count = 0;
+    for (const auto& task : tasks) {
+        if (!task.isDeleted) { // Hanya tampilkan task yang tidak dihapus
+            std::cout << "ID: " << task.id << ", Title: " << task.title
+                      << ", Description: " << task.description
+                      << ", Date: " << task.date
+                      << ", Complete: " << (task.isComplete ? "Yes" : "No")
+                      << ", Deleted: " << (task.isDeleted ? "Yes" : "No") << std::endl;
+            count++;
+        }
+    }
+    return count;
 }
 
-void Task::getDoneTaskCountToday(int date)
+int Task::getDoneTaskCountToday(int date)
 {
-    // kosong
+    //kembalikan jumlah task yang sudah selesai pada hari ini
+    int count = 0;
+    for (const auto& task : tasks) {
+        if (task.isComplete && task.date == date && !task.isDeleted) {
+            count++;
+        }
+    }
+    return count;
 }
 
 void Task::updateTask(int id, const std::string& title, const std::string& description, int date)
@@ -171,7 +216,16 @@ void Task::delayTask(int id)
 
 void Task::deleteTask(int id)
 {
-    // kosong
+    //menandai isDeleted ke true dan simpan log nya
+    for (auto& task : tasks) {
+        if (std::stoi(task.id) == id) {
+            task.isDeleted = true; // Set isDeleted ke true
+            // Simpan log delete: id
+            addLog("DELETE", task.id);
+            break;
+        }
+    }
+
 }
 
 void Task::restoreTask(int id)

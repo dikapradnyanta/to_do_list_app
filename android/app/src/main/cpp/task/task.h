@@ -6,9 +6,11 @@
 #include <deque>
 #include <ctime>
 
-class Task {
+class Task
+{
 private:
-    struct TaskItem {
+    struct TaskItem
+    {
         std::string id;
         std::string title;
         std::string description;
@@ -16,28 +18,30 @@ private:
         bool isComplete;
         bool isDeleted;
 
-        TaskItem(const std::string& id, const std::string& title, const std::string& description, int date);
+        TaskItem(const std::string &id, const std::string &title, const std::string &description, int date);
     };
 
     std::deque<TaskItem> tasks;
 
 public:
     Task();
-
-    void addTask(const std::string& title, const std::string& description, int date);
+    /// task management functions
     void loadDB();
     void updateDB();
-    void addLog(const std::string& action, const std::string& description);
+    void addLog(const std::string &action, const std::string &description);
+
+    // create functions
+    void addTask(const std::string &title, const std::string &description, int date);
 
     // read functions
-    void getTask(int id);
-    void getTaskByDate(int date);
-    void getDoneTaskCount(int date);
-    void getAllTasks();
-    void getDoneTaskCountToday(int date);
+    int getTask(int id);
+    int getTaskByDate(int date);
+    int getDoneTaskCount(int date);
+    int getAllTasks();
+    int getDoneTaskCountToday(int date);
 
     // write functions
-    void updateTask(int id, const std::string& title, const std::string& description, int date);
+    void updateTask(int id, const std::string &title, const std::string &description, int date);
     void changeStatusComplete(int id);
     void delayTask(int id);
 
@@ -47,14 +51,15 @@ public:
 };
 
 // FFI interface
-extern "C" {
-    int addTask(const char* title, const char* description, int date);
+extern "C"
+{
+    int addTask(const char *title, const char *description, int date);
     int getTask(int id);
     int getTaskByDate(int date);
     int getDoneTaskCount(int date);
     int getAllTasks();
     int getDoneTaskCountToday(int date);
-    int updateTask(int id, const char* title, const char* description, int date);
+    int updateTask(int id, const char *title, const char *description, int date);
     int changeStatusComplete(int id);
     int delayTask(int id);
     int deleteTask(int id);
