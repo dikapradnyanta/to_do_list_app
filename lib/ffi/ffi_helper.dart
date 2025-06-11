@@ -1,11 +1,8 @@
-import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:to_do_list_app/ffi/ffi_bindings.dart';
-import 'ffi_binding.dart'; // pastikan fungsi-fungsi dari nativeLib di sini
+import 'ffi_bindings.dart'; // pastikan fungsi-fungsi dari nativeLib di sini
 
 // CREATE
 Future<int> addTaskHelper({
-  required int id,
   required String title,
   required String description,
   required int timestamp,
@@ -13,7 +10,7 @@ Future<int> addTaskHelper({
   final titlePtr = title.toNativeUtf8();
   final descPtr = description.toNativeUtf8();
 
-  final result = addTaskNative(id, titlePtr, descPtr, timestamp); // dari binding
+  final result = addTaskNative(titlePtr, descPtr, timestamp); // dari binding
 
   calloc.free(titlePtr);
   calloc.free(descPtr);
@@ -39,7 +36,7 @@ Future<int> getAllTasksHelper() async {
 }
 
 Future<int> getTaskCountHelper(int date) async {
-  return getTaskCountNative(date);
+  return getDoneTaskCountNative(date);
 }
 
 Future<int> getDoneTaskCountTodayHelper(int date) async {
@@ -51,19 +48,12 @@ Future<int> updateTaskHelper({
   required int id,
   required String newTitle,
   required String newDescription,
-  required int newTimestamp,
-  required bool isDone,
+  required int newTimestamp
 }) async {
   final titlePtr = newTitle.toNativeUtf8();
   final descPtr = newDescription.toNativeUtf8();
 
-  final result = updateTaskNative(
-    id,
-    titlePtr,
-    descPtr,
-    newTimestamp,
-    isDone ? 1 : 0,
-  );
+  final result = updateTaskNative( id , titlePtr, descPtr, newTimestamp);
 
   calloc.free(titlePtr);
   calloc.free(descPtr);
