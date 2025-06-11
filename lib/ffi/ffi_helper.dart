@@ -39,13 +39,12 @@ Future<int> getTaskCountHelper(int date) async {
   return getDoneTaskCountNative(date);
 }
 
-Future<int> getDoneTaskCountTodayHelper(int date) async {
-  return getDoneTaskCountTodayNative(date);
+Future<int> getTaskCountByDateHelper(int date) async {
+  return getTaskCountByDateNative(date);
 }
 
 // UPDATE
 Future<int> updateTaskHelper({
-  required int id,
   required String newTitle,
   required String newDescription,
   required int newTimestamp
@@ -53,7 +52,7 @@ Future<int> updateTaskHelper({
   final titlePtr = newTitle.toNativeUtf8();
   final descPtr = newDescription.toNativeUtf8();
 
-  final result = updateTaskNative( id , titlePtr, descPtr, newTimestamp);
+  final result = updateTaskNative( titlePtr, descPtr, newTimestamp);
 
   calloc.free(titlePtr);
   calloc.free(descPtr);
