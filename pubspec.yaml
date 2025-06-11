@@ -31,6 +31,9 @@ dependencies:
   flutter:
     sdk: flutter
   ffi: ^2.1.0
+  intl: ^0.18.1
+  flutter_svg: ^2.0.10
+  shared_preferences: ^2.2.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,6 +61,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  # The following section is logo specific to Flutter packages.
+  
+  assets:
+    - asset/logo/logo_das.svg
+    - asset/logo/logo_das_bw.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
