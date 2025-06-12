@@ -126,3 +126,43 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+cmake_minimum_required(VERSION 3.4.1)
+
+add_library(
+    task
+    SHARED
+    Task/task.cpp
+    # tambahkan file lain jika perlu
+)
+
+find_library(
+    log-lib
+    log
+)
+
+target_link_libraries(
+    task
+    ${log-lib}
+    sqlite3 # jika pakai sqlite
+)
+
+android {
+    ...
+    defaultConfig {
+        ...
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a" // sesuaikan kebutuhan
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+}
