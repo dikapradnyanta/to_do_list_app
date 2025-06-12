@@ -11,7 +11,7 @@
 //ga ngaruh, cuma buat contoh aja
 int main() {
     Task taskManager;
-    taskManager.addTask("Belajar C++", "Mempelajari dasar-dasar C++", 1633036800); // Contoh timestamp
+    taskManager.addTask("Belajar C++", "Mempelajari dasar-dasar C++", 1633036800, "reads"); // Contoh timestamp
     std::cout << "Task added successfully!" << std::endl;
 }
 
