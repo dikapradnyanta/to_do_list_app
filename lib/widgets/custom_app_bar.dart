@@ -2,27 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final int Function(int date) getTaskByDateHelper;
-  final int Function(int date)? getDoneTaskCountHelper; // tambahkan jika perlu
-
-  const CustomAppBar({
-    super.key,
-    required this.getTaskByDateHelper,
-    this.getDoneTaskCountHelper, // tambahkan jika perlu
-  });
+  const CustomAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final timestamp =
-        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch ~/ 1000;
     final formattedDate = DateFormat('d MMM').format(now);
-
-    final total = getTaskByDateHelper(timestamp);
-    final done = getDoneTaskCountHelper != null
-        ? getDoneTaskCountHelper!(timestamp)
-        : 0;
-    final percent = total == 0 ? 0.0 : done / total;
 
     return SafeArea(
       child: Container(
@@ -63,7 +48,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ),
                     Text(
-                      "$total tasks",
+                      // "$total tasks",
+                      "",
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -79,7 +65,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       height: 48,
                       width: 48,
                       child: CircularProgressIndicator(
-                        value: percent,
+                        // value: percent,
                         strokeWidth: 6,
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
@@ -91,7 +77,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "$done/$total",
+                          // "$done/$total",
+                          "",
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -115,5 +102,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(160);
+  Size get preferredSize => const Size.fromHeight(160); // atau 120, 150, dst sesuai kebutuhan
 }

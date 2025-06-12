@@ -1,6 +1,8 @@
+// File: choose_activity_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'add_task.dart';
 
 class ChooseActivityPage extends StatefulWidget {
   const ChooseActivityPage({super.key});
@@ -26,30 +28,28 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
     selectedDayIndex = monthDays.indexWhere(
       (d) => d.day == now.day && d.month == now.month && d.year == now.year,
     );
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _scrollToSelectedDate(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
   }
 
   void _onCategorySelected(String category) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            AddTaskPage(category: category, date: monthDays[selectedDayIndex]),
+        builder: (_) => AddTaskPage(
+          category: category,
+          date: monthDays[selectedDayIndex],
+        ),
       ),
     );
   }
 
   void _scrollToSelectedDate() {
-    // 5 item, index tengah = 2
-    double itemWidth = 56; // width + margin (48 + 2*4)
+    double itemWidth = 56;
     int centerIndex = 2;
     double targetScroll = (selectedDayIndex - centerIndex) * itemWidth;
     double maxScroll = _scrollController.position.maxScrollExtent;
     double minScroll = _scrollController.position.minScrollExtent;
 
-    // Clamp agar tidak scroll keluar batas
     if (targetScroll < minScroll) targetScroll = minScroll;
     if (targetScroll > maxScroll) targetScroll = maxScroll;
 
@@ -90,11 +90,10 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Horizontal date picker
             Padding(
               padding: const EdgeInsets.only(top: 8.0, left: 32, right: 32),
               child: SizedBox(
-                width: 56.0 * 5, // 5 item * (width + margin)
+                width: 56.0 * 5,
                 height: 60,
                 child: ListView.builder(
                   controller: _scrollController,
@@ -106,36 +105,23 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                     final isCurrentMonth = d.month == currentMonth.month;
                     return GestureDetector(
                       onTap: () {
-                        if (d.month != currentMonth.month ||
-                            d.year != currentMonth.year) {
+                        if (d.month != currentMonth.month || d.year != currentMonth.year) {
                           setState(() {
                             currentMonth = DateTime(d.year, d.month);
                             monthDays = getMonthDays(currentMonth);
                             selectedDayIndex = monthDays.indexWhere(
-                              (dt) =>
-                                  dt.day == d.day &&
-                                  dt.month == d.month &&
-                                  dt.year == d.year,
+                              (dt) => dt.day == d.day && dt.month == d.month && dt.year == d.year,
                             );
                           });
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => _scrollToSelectedDate(),
-                          );
+                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
                         } else {
-                          setState(() {
-                            selectedDayIndex = i;
-                          });
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => _scrollToSelectedDate(),
-                          );
+                          setState(() => selectedDayIndex = i);
+                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
                         }
                       },
                       child: Container(
                         width: 48,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 6,
-                        ),
+                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
                           color: selected ? Colors.indigo : Colors.grey[200],
@@ -151,12 +137,10 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                                 color: selected
                                     ? Colors.white
                                     : isCurrentMonth
-                                    ? Colors.black
-                                    : Colors.black26,
+                                        ? Colors.black
+                                        : Colors.black26,
                                 fontWeight: FontWeight.bold,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -166,11 +150,9 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                                 color: selected
                                     ? Colors.white
                                     : isCurrentMonth
-                                    ? Colors.black54
-                                    : Colors.black26,
+                                        ? Colors.black54
+                                        : Colors.black26,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -200,44 +182,6 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class AddTaskPage extends StatefulWidget {
-  final String category;
-  final DateTime date;
-
-  const AddTaskPage({super.key, required this.category, required this.date});
-
-  @override
-  State<AddTaskPage> createState() => _AddTaskPageState();
-}
-
-class _AddTaskPageState extends State<AddTaskPage> {
-  final _formKey = GlobalKey<FormState>();
-  late DateTime selectedDate;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedDate = widget.date;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Task')),
-      body: Form(
-        key: _formKey,
-        child: Center(
-          child: Text(
-            'Kategori: ${widget.category}\nTanggal: ${DateFormat('yyyy-MM-dd').format(widget.date)}',
-            style: const TextStyle(fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
         ),
       ),
     );

@@ -66,6 +66,7 @@ flutter:
   assets:
     - asset/logo/logo_das.svg
     - asset/logo/logo_das_bw.svg
+    - asset/illustration/kaizen chinese girl.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

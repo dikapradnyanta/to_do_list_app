@@ -1,76 +1,84 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'task_struct.dart'; // Penting: berisi NativeTask struct
 
-/// Load native C++ library
+// Load native library
 final DynamicLibrary nativeLib = Platform.isAndroid
-    ? DynamicLibrary.open("libtask.so")      // Android
-    : DynamicLibrary.process();              // macOS, Windows (ubah jika perlu)
+    ? DynamicLibrary.open("libtask.so")
+    : Platform.isMacOS
+        ? DynamicLibrary.open("libtask.dylib")
+        : DynamicLibrary.process();
 
-// Fungsi-fungsi C++ yang di-export melalui extern "C"
-//=============== CREATE SECTION ===================
-// CREATE
-//addTask(id, title, description, date)
-final int Function(Pointer<Utf8>, Pointer<Utf8>, int) addTaskNative = nativeLib
-    .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32)>>('addTask')
-    .asFunction();
+/// ====================== CREATE ======================
 
+// C: int addTask(const char* title, const char* description, int date, const char* category);
+final int Function(Pointer<Utf8>, Pointer<Utf8>, int, Pointer<Utf8>)
+    addTaskNative = nativeLib
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32, Pointer<Utf8>)>>('addTask')
+        .asFunction();
 
-//=============== READ SECTION ===================
+/// ====================== READ ======================
 
-// getTask(id)
+// C: int getTask(int id);
 final int Function(int) getTaskNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('getTask')
     .asFunction();
 
-///getTaskByDate(date)
-final int Function(int) getTaskByDateNative = nativeLib
-    .lookup<NativeFunction<Int32 Function(Int32)>>('getTaskByDate')
+// C: Pointer<NativeTask> getTaskByDate(int date, int* count);
+typedef GetTaskByDateC = Pointer<NativeTask> Function(Int32, Pointer<Int32>);
+typedef GetTaskByDateDart = Pointer<NativeTask> Function(int, Pointer<Int32>);
+
+final GetTaskByDateDart getTaskByDateNative = nativeLib
+    .lookup<NativeFunction<GetTaskByDateC>>('getTaskByDate')
     .asFunction();
 
-///getDoneTaskCount(date)
+// C: int getDoneTaskCount(int date);
 final int Function(int) getDoneTaskCountNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('getDoneTaskCount')
     .asFunction();
 
-///getTaskCount(date)
+// C: int getDoneTaskCountToday(int date);
+final int Function(int) getDoneTaskCountTodayNative = nativeLib
+    .lookup<NativeFunction<Int32 Function(Int32)>>('getDoneTaskCountToday')
+    .asFunction();
+
+// C: int getTaskCount(int date);
+final int Function(int) getTaskCountNative = nativeLib
+    .lookup<NativeFunction<Int32 Function(Int32)>>('getTaskCount')
+    .asFunction();
+
+// C: int getAllTasks();
 final int Function() getAllTasksNative = nativeLib
     .lookup<NativeFunction<Int32 Function()>>('getAllTasks')
     .asFunction();
-///getAllTasks()
 
-final int Function(int) getDoneTaskCountTodayNative = nativeLib
-    .lookup<NativeFunction<Int32 Function(Int32)>>('getDoneTaskCount')
-    .asFunction();
+/// ====================== UPDATE ======================
 
-///============= UPDATE ====================
+// C: int updateTask(int id, const char* title, const char* desc, int date);
+final int Function(int, Pointer<Utf8>, Pointer<Utf8>, int)
+    updateTaskNative = nativeLib
+        .lookup<NativeFunction<Int32 Function(Int32, Pointer<Utf8>, Pointer<Utf8>, Int32)>>('updateTask')
+        .asFunction();
 
-///UpdateTask(id, title, description, date)
-final int Function( int, Pointer<Utf8>, Pointer<Utf8>, int) updateTaskNative = nativeLib
-    .lookup<NativeFunction<Int32 Function(Int32, Pointer<Utf8>, Pointer<Utf8>, Int32 )>>('updateTask')
-    .asFunction();
-
-///changeStatusComplete(id)
+// C: int changeStatusComplete(int id);
 final int Function(int) changeStatusCompleteNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('changeStatusComplete')
     .asFunction();
 
-///delayTask(id)
+// C: int delayTask(int id);
 final int Function(int) delayTaskNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('delayTask')
     .asFunction();
 
+/// ====================== DELETE / RESTORE ======================
 
-/// ================== DELETE ==================
-
-/// deleteTask(id)
+// C: int deleteTask(int id);
 final int Function(int) deleteTaskNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('deleteTask')
     .asFunction();
 
-/// restoreTask(id)
+// C: int restoreTask(int id);
 final int Function(int) restoreTaskNative = nativeLib
     .lookup<NativeFunction<Int32 Function(Int32)>>('restoreTask')
     .asFunction();
-
-

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'add_task.dart';
+import 'package:to_do_list_app/ffi/ffi_helper.dart';
 import 'widgets/custom_app_bar.dart';
 import 'spalsh_screen.dart';
-import 'ffi/ffi_bindings.dart'; // pastikan path sesuai
+import 'category.dart';
+import 'widgets/task_tile.dart';
+import 'widgets/task_model.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+// pastikan path sesuai
 
 void main() {
   runApp(const MyApp());
@@ -50,18 +54,14 @@ class _HomePageState extends State<HomePage> {
 
   Future<Map<String, int>> getTodayTaskStats() async {
     // Panggil fungsi native
-    final done = getDoneTaskCountNative(todayTimestamp);
-    final total = getTaskByDateNative(todayTimestamp);
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final done = await getDoneTaskCountHelper(now);
+    final total = await getTaskCountHelper(now);
     return {'done': done, 'total': total};
   }
 
-  int totalTasks = 10;
-  int completedTasks = 9;
-
-  int getTaskByDateHelper(int dateTimestamp) {
-    // Ganti dengan logika real untuk hitung task berdasarkan date
-    return totalTasks;
-  }
+  //int totalTasks = done
+  //int completedTasks = getDoneTaskCountHelper(DateTime.now().millisecondsSinceEpoch ~/ 1000);
 
   int _selectedIndex = 0;
 
@@ -74,11 +74,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        getTaskByDateHelper: getTaskByDateHelper,
-        // Hapus baris berikut karena tidak ada di konstruktor CustomAppBar:
-        // getDoneTaskCountHelper: getDoneTaskCountHelper,
-      ),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           Padding(
@@ -134,7 +130,52 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          const Expanded(child: Center(child: Text("List of Tasks Goes Here"))),
+          Expanded(
+            child: FutureBuilder<List<Task>>(
+              future: getTaskByDateHelper(todayTimestamp),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final tasks = snapshot.data ?? [];
+
+                if (tasks.isEmpty) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Gambar SVG ilustrasi
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: SvgPicture.asset('assets/illustration/kaizen_chinese_girl.svg'),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        "No tasks today.\nTake a breath and enjoy your moment",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: tasks.length,
+                  itemBuilder: (context, index) {
+                    return TaskTile(task: tasks[index]);
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -158,7 +199,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddTaskPage()),
+            MaterialPageRoute(builder: (context) => const ChooseActivityPage()),
           );
         },
         child: const Icon(Icons.add),
