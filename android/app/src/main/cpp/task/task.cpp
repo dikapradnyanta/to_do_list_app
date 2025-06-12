@@ -5,6 +5,9 @@
 #include <string>
 #include <ctime>
 
+// Global Task instance
+Task g_task;
+
 Task::Task() {
     // Inisialisasi jika perlu
 }
@@ -193,7 +196,7 @@ void Task::changeStatusComplete(int id)
 
 void Task::delayTask(int id)
 {
-    //karena di variabel task berbentuk deque, saya ingin dia deleted task id ini lalu di push ke belakang
+    // karena di variabel task berbentuk deque, saya ingin dia deleted task id ini lalu di push ke belakang
     for (auto it = tasks.begin(); it != tasks.end(); ++it) {
         if (std::stoi(it->id) == id) {
             // Simpan log delete: id
@@ -202,8 +205,6 @@ void Task::delayTask(int id)
             TaskItem delayedTask = *it;
             // Hapus task dari vector
             tasks.erase(it);
-            // Update tanggal (misal tambah 1 hari)
-            delayedTask.date += 86400; // 86400 detik = 1 hari
             // Tambahkan kembali ke belakang
             tasks.push_back(delayedTask);
             // Simpan log insert: title|||note|||timestamp
@@ -393,3 +394,58 @@ void Task::updateDB() {
     std::ofstream ofs("log.txt", std::ofstream::out | std::ofstream::trunc);
     ofs.close();
 }
+
+extern "C" {
+
+int addTask(const char *title, const char *description, int date) {
+    g_task.addTask(title, description, date);
+    return 1; // return 1 untuk sukses, bisa diubah sesuai kebutuhan
+}
+
+int getTask(int id) {
+    return g_task.getTask(id);
+}
+
+int getTaskByDate(int date) {
+    return g_task.getTaskByDate(date);
+}
+
+int getDoneTaskCount(int date) {
+    return g_task.getDoneTaskCount(date);
+}
+
+int getAllTasks() {
+    return g_task.getAllTasks();
+}
+
+int getDoneTaskCountToday(int date) {
+    return g_task.getDoneTaskCountToday(date);
+}
+
+int updateTask(int id, const char *title, const char *description, int date) {
+    g_task.updateTask(id, title, description, date);
+    return 1;
+}
+
+int changeStatusComplete(int id) {
+    g_task.changeStatusComplete(id);
+    return 1;
+}
+
+int delayTask(int id) {
+    g_task.delayTask(id);
+    return 1;
+}
+
+int deleteTask(int id) {
+    g_task.deleteTask(id);
+    return 1;
+}
+
+int restoreTask(int id) {
+    g_task.restoreTask(id);
+    return 1;
+}
+
+}
+
