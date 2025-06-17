@@ -28,19 +28,23 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
     selectedDayIndex = monthDays.indexWhere(
       (d) => d.day == now.day && d.month == now.month && d.year == now.year,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToSelectedDate(),
+    );
   }
 
-  void _onCategorySelected(String category) {
-    Navigator.push(
+  Future<void> _onCategorySelected(String category) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddTaskPage(
-          category: category,
-          date: monthDays[selectedDayIndex],
-        ),
+        builder: (_) =>
+            AddTaskPage(category: category, date: monthDays[selectedDayIndex]),
       ),
     );
+    if (!mounted) return;
+    if (result == true) {
+      Navigator.pop(context, true);
+    }
   }
 
   void _scrollToSelectedDate() {
@@ -105,23 +109,34 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                     final isCurrentMonth = d.month == currentMonth.month;
                     return GestureDetector(
                       onTap: () {
-                        if (d.month != currentMonth.month || d.year != currentMonth.year) {
+                        if (d.month != currentMonth.month ||
+                            d.year != currentMonth.year) {
                           setState(() {
                             currentMonth = DateTime(d.year, d.month);
                             monthDays = getMonthDays(currentMonth);
                             selectedDayIndex = monthDays.indexWhere(
-                              (dt) => dt.day == d.day && dt.month == d.month && dt.year == d.year,
+                              (dt) =>
+                                  dt.day == d.day &&
+                                  dt.month == d.month &&
+                                  dt.year == d.year,
                             );
                           });
-                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => _scrollToSelectedDate(),
+                          );
                         } else {
                           setState(() => selectedDayIndex = i);
-                          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedDate());
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => _scrollToSelectedDate(),
+                          );
                         }
                       },
                       child: Container(
                         width: 48,
-                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
                           color: selected ? Colors.indigo : Colors.grey[200],
@@ -137,8 +152,8 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                                 color: selected
                                     ? Colors.white
                                     : isCurrentMonth
-                                        ? Colors.black
-                                        : Colors.black26,
+                                    ? Colors.black
+                                    : Colors.black26,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -150,8 +165,8 @@ class _ChooseActivityPageState extends State<ChooseActivityPage> {
                                 color: selected
                                     ? Colors.white
                                     : isCurrentMonth
-                                        ? Colors.black54
-                                        : Colors.black26,
+                                    ? Colors.black54
+                                    : Colors.black26,
                               ),
                             ),
                           ],

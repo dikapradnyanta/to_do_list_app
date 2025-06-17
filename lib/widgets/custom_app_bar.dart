@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../restore_page.dart';
+import 'package:to_do_list_app/widgets/task_tile.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  final int date;
+  final int done;
+  final int total;
+  final VoidCallback? onRefresh;
+
+  const CustomAppBar({
+    super.key,
+    required this.date,
+    required this.done,
+    required this.total,
+    this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final percent = (total == 0) ? 0.0 : done / total;
     final now = DateTime.now();
     final formattedDate = DateFormat('d MMM').format(now);
 
     return SafeArea(
+      bottom: false,
+      top: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
         decoration: const BoxDecoration(
-          color: Color(0xFF3D4ED7),
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          color: Color(0xFF3F51B5),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Baris atas: menu, tanggal, icon jam
+            // Top Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -28,11 +44,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   formattedDate,
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
-                const Icon(Icons.access_time, color: Colors.white),
+                IconButton(
+                  icon: const Icon(Icons.access_time, color: Colors.white,), // ✅ this can stay const
+                  onPressed: () async {
+                    final restored = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RestoreTaskPage(),
+                      ),
+                    );
+
+                    if (restored == true && onRefresh != null) {
+                      onRefresh!(); // ✅ call parent's refresh method if provided
+                    }
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 30),
-            // Baris bawah: Today + Progress Lingkaran
+            // Bottom Row: Today + Progress
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -48,8 +78,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ),
                     Text(
-                      // "$total tasks",
-                      "",
+                      "$total tasks",
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -57,7 +86,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ],
                 ),
-                // Progress Lingkaran
+                // Progress Circle
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -65,7 +94,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       height: 48,
                       width: 48,
                       child: CircularProgressIndicator(
-                        // value: percent,
+                        value: percent,
                         strokeWidth: 6,
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
@@ -77,8 +106,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          // "$done/$total",
-                          "",
+                          "$done/$total",
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -102,5 +130,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(160); // atau 120, 150, dst sesuai kebutuhan
+  Size get preferredSize => const Size.square(160);
 }

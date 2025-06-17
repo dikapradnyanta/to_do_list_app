@@ -8,7 +8,25 @@ plugins {
 android {
     namespace = "com.example.to_do_list_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
+
+    defaultConfig {
+        applicationId = "com.example.to_do_list_app"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-frtti", "-fexceptions")
+            }
+        }
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -16,29 +34,36 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
-
-    defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.to_do_list_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        jvmTarget = "11"
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("debug") {
+            isMinifyEnabled = false
         }
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
+    
+    sourceSets {
+        getByName("main") {
+            // Direktori source native kamu
+            jniLibs.srcDirs("src/main/jniLibs")
+            jni.srcDirs("src/main/cpp")
+        }
+    }
+
+    flutter {
+        source = "../.."
     }
 }
 
-flutter {
-    source = "../.."
-}

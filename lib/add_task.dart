@@ -34,19 +34,37 @@ class _AddTaskPageState extends State<AddTaskPage> {
       final title = _titleController.text.trim();
       final note = _noteController.text.trim();
       final category = _selectedCategory;
-      final date = selectedDate;
-      final timestamp = date.millisecondsSinceEpoch;
+      final timestampnow = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
       debugPrint('Before addTaskHelper');
-      await addTaskHelper(
+      final result = await addTaskHelper(
         title: title,
         description: note,
-        timestamp: timestamp,
+        timestamp: timestampnow,
         kategori: category,
       );
+      final updatedTask = await getAllTasksHelper();
+      debugPrint("jumlah task: ${updatedTask.length}");
       debugPrint('After addTaskHelper');
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+
+      if (!mounted) return; // ✅ Hindari error context setelah async
+
+      if (result == 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+        Navigator.pop(context, true); 
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save task'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -103,7 +121,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: borderRadius,
-                      borderSide: BorderSide(color: Colors.transparent),
+                      borderSide: const BorderSide(color: Colors.transparent),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: borderRadius,

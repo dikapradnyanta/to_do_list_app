@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Koman\Documents\PROJECT\Developer\Mobile Dev\to_do_list_app\android\app\src\main\cpp\build\CMakeFiles\b814a16a5097c54f795c14548f994210\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DA98CBA0-9264-3757-97C9-F10F3DBB101F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

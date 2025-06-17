@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:to_do_list_app/ffi/ffi_helper.dart';
 import 'widgets/custom_app_bar.dart';
-import 'spalsh_screen.dart';
+import 'splash_screen.dart';
 import 'category.dart';
 import 'widgets/task_tile.dart';
 import 'widgets/task_model.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-// pastikan path sesuai
+import 'task_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final dir = await getApplicationDocumentsDirectory();
+  final dbPath = '${dir.path}/tasks.db';
+
+  try {
+    //
+    await initDBWithPathHelper(dbPath);
+    debugPrint('Database initialized at: $dbPath');
+    await updateDBhelper();
+    await loadDBHelper();
+    debugPrint('Database loaded successfully');
+  } catch (e) {
+    debugPrint('DB initialization failed: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -19,15 +34,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'To-Do List',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.indigo,
-          accentColor: Colors.indigoAccent,
-        ).copyWith(secondary: Colors.indigoAccent),
-        useMaterial3: true,
-      ),
+      title: 'To Do List App',
+      theme: ThemeData(primarySwatch: Colors.indigo),
       home: const SplashScreen(),
     );
   }
@@ -40,167 +48,234 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with RouteAware {
   late int todayTimestamp;
+  List<Task> _tasks = [];
+  bool _isLoading = true;
+  String? _error;
+  int _done = 0;
+  int _total = 0;
 
   @override
   void initState() {
     super.initState();
-    // Timestamp hari ini (dalam detik)
+
     final now = DateTime.now();
     todayTimestamp =
         DateTime(now.year, now.month, now.day).millisecondsSinceEpoch ~/ 1000;
+
+    sendLogPathToNative();
+    _loadTasks();
+    _updateStats();
   }
 
-  Future<Map<String, int>> getTodayTaskStats() async {
-    // Panggil fungsi native
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final done = await getDoneTaskCountHelper(now);
-    final total = await getTaskCountHelper(now);
-    return {'done': done, 'total': total};
+  // PERBAIKAN: Tambahkan listener untuk mendeteksi ketika kembali dari halaman lain
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // Refresh ketika kembali dari halaman lain
+    _refreshTasks();
   }
 
-  //int totalTasks = done
-  //int completedTasks = getDoneTaskCountHelper(DateTime.now().millisecondsSinceEpoch ~/ 1000);
+  Future<void> _updateStats() async {
+    try {
+      final result = await getTaskStatsHelper(todayTimestamp);
+      if (mounted) {
+        setState(() {
+          _done = result['done'] ?? 0;
+          _total = result['total'] ?? 0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error updating stats: $e');
+    }
+  }
 
-  int _selectedIndex = 0;
+  Future<void> _loadTasks() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
 
-  void _onItemTapped(int index) {
+      // PERBAIKAN: Selalu reload database sebelum mengambil data
+      await updateDBhelper();
+      await loadDBHelper();
+
+      final tasks = await getTaskByDateHelper(todayTimestamp);
+
+      // Debug: Print task status untuk memastikan data benar
+      for (var task in tasks) {
+        debugPrint('Task: ${task.title}, isComplete: ${task.isComplete}');
+      }
+
+      if (mounted) {
+        setState(() {
+          _tasks = tasks;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading tasks: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshTasks() async {
+    // PERBAIKAN: Reload database sebelum mengambil tasks untuk memastikan sinkronisasi
+    try {
+      await updateDBhelper();
+      await loadDBHelper();
+    } catch (e) {
+      debugPrint('Error reloading database: $e');
+    }
+
+    await _loadTasks();
+    await _updateStats();
+  }
+
+  void _updateTaskInList(Task updatedTask) {
+    // Update task di list dan refresh stats
+    final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
+    if (index != -1) {
+      setState(() {
+        _tasks[index] = updatedTask;
+      });
+    }
+    // Selalu update stats setelah perubahan
+    _updateStats();
+  }
+
+  void _removeTaskFromList(int taskId) {
+    // Hapus task dari list dan refresh stats
     setState(() {
-      _selectedIndex = index;
+      _tasks.removeWhere((task) => task.id == taskId);
     });
+    _updateStats();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                FutureBuilder<Map<String, int>>(
-                  future: getTodayTaskStats(),
-                  builder: (context, snapshot) {
-                    int done = snapshot.data?['done'] ?? 0;
-                    int total = snapshot.data?['total'] ?? 1;
-                    double percent = total == 0 ? 0 : done / total;
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          height: 48,
-                          width: 48,
-                          child: CircularProgressIndicator(
-                            value: percent,
-                            strokeWidth: 6,
-                            backgroundColor: Colors.white24,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        ),
-                        Column(
+      appBar: CustomAppBar(date: todayTimestamp, done: _done, total: _total, onRefresh: _refreshTasks,),
+      body: RefreshIndicator(
+        onRefresh: _refreshTasks,
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            children: [
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
+                    ? Center(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              "$done/$total",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
                             ),
-                            const Text(
-                              "Done",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                              ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading tasks: $_error',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _refreshTasks,
+                              child: const Text('Retry'),
                             ),
                           ],
                         ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<Task>>(
-              future: getTaskByDateHelper(todayTimestamp),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final tasks = snapshot.data ?? [];
-
-                if (tasks.isEmpty) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Gambar SVG ilustrasi
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: SvgPicture.asset('assets/illustration/kaizen_chinese_girl.svg'),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "No tasks today.\nTake a breath and enjoy your moment",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.w500,
+                      )
+                    : _tasks.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset('asset/img/kaisen.png', height: 300),
+                              const Text(
+                                "No tasks today.\nTake a breath and enjoy your moment",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.indigo,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _tasks.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: TaskTile(
+                              key: ValueKey(
+                                _tasks[index].id,
+                              ), // PERBAIKAN: Tambahkan key untuk tracking yang lebih baik
+                              task: _tasks[index],
+                              onToggleComplete: (updatedTask) {
+                                _updateTaskInList(updatedTask);
+                              },
+                              onDelete: () {
+                                _removeTaskFromList(_tasks[index].id);
+                              },
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    return TaskTile(task: tasks[index]);
-                  },
-                );
-              },
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: 0,
+        onTap: (index) async {
+          if (index == 1) {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TaskPage()),
+            );
+            // PERBAIKAN: Selalu refresh ketika kembali dari TaskPage
+            _refreshTasks();
+          }
+        },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month),
-            label: 'Task',
+            label: 'All Tasks',
           ),
         ],
       ),
+      resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChooseActivityPage()),
+            MaterialPageRoute(builder: (_) => const ChooseActivityPage()),
           );
+
+          if (result == true) {
+            _refreshTasks();
+          }
         },
         child: const Icon(Icons.add),
       ),
